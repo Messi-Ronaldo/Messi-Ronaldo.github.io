@@ -1,0 +1,25 @@
+name: Deploy GitHub Pages with Math Support
+
+on:
+  push:
+    branches: [ main ]  # 如果你的默认分支是 master，就改成 master
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+      
+      - name: Build with Jekyll
+        uses: actions/jekyll-build-pages@v1
+        with:
+          source: ./
+          destination: ./_site
+          jekyll_env: production
+          build_args: --config _config.yml
+      
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v4
