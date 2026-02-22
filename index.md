@@ -7,4 +7,4 @@ title: 首页
 ## 最新文章
 
 - [TEST](/2026/02/22/first-post.html)
-- [BILLY](billy.html)
+- [BILLY](BILLY.html)
