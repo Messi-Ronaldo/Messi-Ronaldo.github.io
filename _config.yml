@@ -1,0 +1,7 @@
+title: The Blog of Billy
+description: 支持 LaTeX 的个人博客
+baseurl: ""
+url: "https://Messi-Ronaldo.github.io"
+markdown: kramdown
+kramdown:
+  math_engine: mathjax
