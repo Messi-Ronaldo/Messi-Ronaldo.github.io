@@ -96,3 +96,8 @@ inline auto lagrange(int n, const std::vector<T> &x, const std::vector<T> &y, in
     return res;
 }
 ```
+### 问题
+在这⾥可以看到，拉格朗⽇插值不只提供了⼀个求值的算法。还提供了⼀个点值向系数表达式的
+转换算法。在⼀般情况下，这个算法的复杂度是 $$O(n^2)$$ 似乎还不够好。
+
+## FFT 
