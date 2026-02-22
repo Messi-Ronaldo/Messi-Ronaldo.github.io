@@ -1,94 +1,89 @@
+# 卷积与多项式基础
+## 卷积
+在算法竞赛中，卷积经常用来表示用两个多项式函数生成第三个多项式函数的运算。一般用 $*$ 表示卷积符号（或直接用乘号），即：
+$$h(x)=f(x) * g(x)$$
+若将多项式的系数提取，卷积也可看作**两个数组生成第三个数组**的运算。
+
+### 加法卷积
+最常规的卷积形式，等价于**多项式乘法**：
+$$h[n]=\sum_{i=0}^{n} f[i] g[n-i]$$
+
+### 减法卷积
+$$h[x]=\sum_{i=x}^{n} f[i] g[i-x]$$
+常规处理方式：翻转 $g$ 数组，令 $g'[i]=g[n-i]$，则：
+$$h[x]=\sum_{i=x}^{n} f[i] g[i-x]=\sum_{i=x}^{n} f[i] g'[n-i+x]$$
+将加法卷积结果**偏移 $n$** 即可得到 $h[x]$。
+
+### 位运算卷积
+定义 $\oplus$ 为任意位运算（与、或、异或等），则：
+$$h[i \oplus j]=\sum_{i=0}^{n} \sum_{j=0}^{n} f[i] \cdot g[j]$$
+
+### 狄利克雷卷积
+常见于数论函数，定义：
+$$h(x)=\sum_{i \mid x} f(i) g\left(\frac{x}{i}\right)$$
+**暴力计算复杂度**：
+- 除狄利克雷卷积（复杂度为调和级数）外，其余卷积均为 $O(n^2)$；
+- 下文以**加速加法卷积（多项式乘法）** 展开核心思路。
+
 ---
-layout: default
-title: Poly
-date: 2026-02-22
+
+## 多项式
+### 基本定义
+多项式是形如以下的求和形式：
+$$f(x)=\sum_{i=0}^{n} a_{i} x^{i}$$
+- $n$ 次多项式：最高次项的指数为 $n$，共 $n+1$ 项；
+- 无穷多项式：最高次项为无穷的多项式；
+- 系数 $a_i$ 为多项式的核心特征。
+
+### 两种表示法
+#### 1. 系数表示法
+用**系数和未知数的求和形式**表示多项式，是多项式的**唯一表示法**，也是最常用的表示法。
+
+#### 2. 点值表示法
+任意 $n+1$ 个**横坐标不相同**的点 $(x_i, f(x_i))$，可唯一确定一个 $n$ 次多项式。
+**原理**：将 $n+1$ 个点代入多项式，得到 $n+1$ 元一次方程组，该方程组有**唯一解**。
+
+### 多项式的运算
+仅考虑**加法**和**乘法**，分别对比**系数表示法**和**点值表示法**（要求横坐标一一对应）的运算规则与复杂度。
+
+#### 系数表示法下的运算
+设 $f(x)=\sum_{i=0}^{n} a_{i} x^{i}$，$g(x)=\sum_{i=0}^{n} b_{i} x^{i}$：
+1. **加法**：$f(x)+g(x)$ 直接将对应项系数相加，时间复杂度 $O(n)$；
+2. **乘法**：多项式乘积的系数为两多项式系数的**加法卷积**，即：
+$$f(x) \cdot g(x)=\sum_{i=0}^{2n}\left(\sum_{j+k=i} a_j b_k\right)x^i$$
+   对每一项 $x^i$ 需遍历求和，时间复杂度 $O(n^2)$。
+
+#### 点值表示法下的运算
+设 $f(x),g(x)$ 的点值表示均为 $\{(x_0,f(x_0)),(x_1,f(x_1)),\dots,(x_n,f(x_n))\}$ 和 $\{(x_0,g(x_0)),(x_1,g(x_1)),\dots,(x_n,g(x_n))\}$：
+1. **加法**：点值更新为 $(x_i, f(x_i)+g(x_i))$，时间复杂度 $O(n)$；
+2. **乘法**：点值更新为 $(x_i, f(x_i) \cdot g(x_i))$，时间复杂度 $O(n)$。
+
+**核心结论**：点值表示法的多项式乘法效率极高，若能实现**系数↔点值**的高效转换，可大幅降低多项式乘法复杂度。
+
+#### 朴素转换的复杂度
+- **系数→点值**：任取 $n+1$ 个点求值，每次求值 $O(n)$，总体 $O(n^2)$；
+- **点值→系数**：高斯消元解 $n+1$ 元一次方程组，时间复杂度 $O(n^3)$。
+
 ---
 
-$$ \title{卷积与多项式} $$
-$$ \author{邹易轩} $$
-$$ \date{2026.2.22} $$
-\maketitle
+## 拉格朗日插值
+解决**点值表示法的多项式求值/系数转换**问题，是算法竞赛中常用的插值算法。
 
-\section{卷积}
-卷积常用来表示两个多项式函数生成第三个多项式函数的运算，一般用 $*$ 表示卷积符号（或直接用乘号），即
-\[h(x)=f(x) * g(x)\]
-若将多项式的系数提取，卷积也可看作两个数组生成第三个数组的运算。
+### 插值公式
+设多项式的点值为 $(x_0,y_0),(x_1,y_1),\dots,(x_n,y_n)$，则多项式的表达式为：
+$$f(x)=\sum_{i=0}^{n} y_{i} \prod_{\substack{j=0\\j \neq i}}^{n} \frac{x-x_{j}}{x_{i}-x_{j}}$$
 
-\subsection{加法卷积}
-最常规的卷积形式，等价于多项式乘法：
-\[h[n]=\sum_{i=0}^{n} f[i] g[n-i]\]
+### 公式的数学直觉
+本质是构造基函数 $p_i(x)$，满足：
+- $x=x_i$ 时，$p_i(x)=1$；
+- $x=x_j(j \neq i)$ 时，$p_i(x)=0$。
+构造辅助函数 $q_i(x)=\prod_{j \neq i}(x-x_j)$（满足 $x=x_j$ 时为 0），再除以 $q_i(x_i)$ 归一化，最终得到 $p_i(x)=\frac{q_i(x)}{q_i(x_i)}$，即插值公式。
 
-\subsection{减法卷积}
-\[h[x]=\sum_{i=x}^{n} f[i] g[i-x]\]
-一般可翻转 $g$ 数组，令 $g'[i]=g[n-i]$，则
-\[h[x]=\sum_{i=x}^{n} f[i] g[i-x]=\sum_{i=x}^{n} f[i] g'[n-i+x]\]
-将加法卷积结果偏移 $n$ 即可得到 $h[x]$。
-
-\subsection{位运算卷积}
-定义 $\oplus$ 为一种位运算（与、或、异或等），则
-\[h[i \oplus j]=\sum_{i=0}^{n} \sum_{j=0}^{n} f[i] \cdot g[j]\]
-
-\subsection{狄利克雷卷积}
-常见于数论函数：
-\[h(x)=\sum_{i \mid x} f(i) g\left(\frac{x}{i}\right)\]
-暴力计算时，除狄利克雷卷积（复杂度为调和级数）外，其余卷积的时间复杂度均为 $O(n^2)$。
-
-下文以加速加法卷积（多项式乘法）展开说明。
-
-\section{多项式}
-多项式是基本的数学工具，形如
-\[f(x)=\sum_{i=0}^{n} a_{i} x^{i}\]
-的求和形式。其中最高次项的指数为 $n$ 时，称为 $n$ 次多项式，显然 $n$ 次多项式共有 $n+1$ 项；若最高次项为无穷，称为无穷多项式。
-
-\subsection{多项式的表示法}
-\subsubsection{系数表示法}
-用系数和未知数的求和形式表示多项式，是多项式的唯一表示方式。
-
-\subsubsection{点值表示法}
-任意 $n+1$ 个横坐标不相同的点 $(x_i, f(x_i))$ 可唯一确定一个 $n$ 次多项式。
-原因：$n$ 次多项式有 $n+1$ 项，将 $n+1$ 个横坐标不同的点代入后得到 $n+1$ 元一次方程组，该方程组有唯一解，因此 $n$ 次多项式可由 $n+1$ 个点的点值唯一表示。
-
-\subsection{多项式的运算}
-仅考虑加法和乘法，分别讨论**系数表示法**和**点值表示法**（横坐标一一对应）下的运算规则与时间复杂度。
-
-\subsubsection{系数表示法下的运算}
-1. 加法：$f(x)+g(x)$ 只需将对应项系数相加，时间复杂度 $O(n)$；
-2. 乘法：设 $f(x)=\sum_{i=0}^{n} a_{i} x^{i}$，$g(x)=\sum_{i=0}^{n} b_{i} x^{i}$，则
-\[f(x) \cdot g(x)=\sum_{i=0}^{2n}\left(\sum_{j+k=i} a_j b_k\right)x^i\]
-对每一项 $x^i$，需找到两个多项式中和为 $i$ 的两项相乘再累加，时间复杂度 $O(n^2)$。
-
-\subsubsection{点值表示法下的运算}
-设多项式 $f(x),g(x)$ 的点值表示横坐标一一对应，均为 $x_i$：
-1. 加法：点值表示更新为 $(x_i, f(x_i)+g(x_i))$，时间复杂度 $O(n)$；
-2. 乘法：点值表示更新为 $(x_i, f(x_i) \cdot g(x_i))$，时间复杂度 $O(n)$。
-
-点值表示法的多项式乘法效率极高，若存在高效的**点值↔系数**转换方法，可大幅降低多项式乘法的时间复杂度。
-
-\subsubsection{朴素转换的复杂度}
-1. 系数→点值：任取 $n+1$ 个横坐标不同的点求值，每次求值需 $O(n)$，总体 $O(n^2)$；
-2. 点值→系数：高斯消元解 $n+1$ 元一次方程组，时间复杂度 $O(n^3)$。
-
-\section{拉格朗日插值}
-系数表示法的多项式求值易计算，而点值表示法缺乏高效的求值手段，拉格朗日插值是基于点值表示法的高效多项式求值/转换算法。
-
-\subsection{插值公式}
-设多项式的点值为 $(x_0,y_0),(x_1,y_1),\dots,(x_n,y_n)$，则多项式为：
-\[f(x)=\sum_{i=0}^{n} y_{i} \prod_{\substack{j=0\\j \neq i}}^{n} \frac{x-x_{j}}{x_{i}-x_{j}}\]
-
-\subsection{公式的数学直觉}
-本质是构造 $f(x)=\sum_{i=0}^{n} y_{i} \cdot p_{i}(x)$，其中基函数 $p_i(x)$ 满足：
-$x=x_i$ 时 $p_i(x)=1$，$x=x_j(j \neq i)$ 时 $p_i(x)=0$。
-
-构造辅助函数 $q_i(x)=\prod_{\substack{j=0\\j \neq i}}^{n} (x-x_j)$，满足 $x=x_j(j \neq i)$ 时 $q_i(x)=0$；
-为满足 $x=x_i$ 时 $p_i(x)=1$，令 $p_i(x)=\frac{q_i(x)}{q_i(x_i)}$，最终得到拉格朗日插值公式。
-
-拉格朗日插值既可以求值，也可实现**点值→系数**的转换，一般情况下时间复杂度为 $O(n^2)$。
-
-\subsection{拉格朗日插值通用代码}
-\begin{verbatim}
+### 核心代码（通用版）
+```cpp
+// 拉格朗日插值通用模板：n个点(x[1..n],y[1..n])，求f(m)
 template <typename T>
-inline auto lagrange(int n, const std::vector<T> &x, const std::vector<T>
-&y, int m) -> T
+inline auto lagrange(int n, const std::vector<T> &x, const std::vector<T> &y, int m) -> T
 {
     T res = 0;
     for (int i = 1; i <= n; ++i)
@@ -101,286 +96,3 @@ inline auto lagrange(int n, const std::vector<T> &x, const std::vector<T>
     }
     return res;
 }
-\end{verbatim}
-
-\subsection{等距整数插值点的优化}
-若选择连续整数 $x=0,1,2,\dots,k$ 作为插值点，拉格朗日公式简化为：
-\[f(x)=\sum_{i=0}^{k} y_{i} \prod_{\substack{j=0\\j \neq i}}^{k} \frac{x-j}{i-j}\]
-
-\subsubsection{分母化简}
-- 当 $j<i$ 时，$\prod_{j<i}(i-j)=i!$；
-- 当 $j>i$ 时，$\prod_{j>i}(i-j)=(-1)^{k-i} \cdot (k-i)!$。
-
-通过预处理**阶乘、阶乘的逆元**以及 $(x-j)$ 的**前缀/后缀积**，可将插值复杂度优化至 $O(n)$。
-
-\subsection{等距插值点的参考代码}
-\begin{verbatim}
-template <typename T>
-inline auto lagrange(int n, const std::vector<T> &y, int m) -> T
-{
-    T res = 0, P = 1;
-    for (int i = 1; i <= n; ++i)
-        P *= (m - i);
-    std::vector<T> fac(n + 1);
-    fac[0] = 1;
-    for (int i = 1; i <= n; ++i)
-        fac[i] = fac[i - 1] * i;
-    for (int i = 1; i <= n; ++i)
-        if ((n - i) % 2)
-            res -= y[i] * P / ((m - i) * fac[i - 1] * fac[n - i]);
-        else
-            res += y[i] * P / ((m - i) * fac[i - 1] * fac[n - i]);
-    return res;
-}
-\end{verbatim}
-
-\section{傅里叶变换（FFT）}
-傅里叶变换是将多项式**系数表示法**转换为**点值表示法**的过程，反之称为**逆傅里叶变换**。
-
-\subsection{分治算法推导}
-对多项式 $f(x)=\sum_{i=0}^{n-1} a_{i} x^{i}$，将指数按奇偶性划分：
-\[f(x)=\sum_{\substack{i=0\\2i \leq n-1}} a_{2i} x^{2i} + x \sum_{\substack{i=0\\2i+1 \leq n-1}} a_{2i+1} x^{2i} = g(x^2) + x \cdot h(x^2)\]
-其中 $g(x),h(x)$ 为拆分后的子多项式。若能得到 $g(x),h(x)$ 的点值表示且横坐标对应，可合并得到 $f(x)$ 的点值表示。
-
-设 $X$ 是 $f(x)$ 点值表示的横坐标集合，$|X|=n$，分治时将 $X^2=\{x^2 \mid x \in X\}$ 代入 $g(x),h(x)$ 求值，再合并结果。
-
-\subsection{分治伪代码}
-\begin{verbatim}
-std::vector<std::pair<double,double>> solve(const std::vector<double> &a, const
-std::vector<double> &x)
-{
-    std::vector<double> b, c;
-    for (int i = 0; i + i < a.size(); ++i)
-        push_back(a[i+i]);
-    for (int i = 0; i + i + 1 < a.size(); ++i)
-        push_back(a[i+i+1]);
-
-    std::vector<double> x2;
-    for (int i = 0; i < x.size(); ++i)
-        push_back(x[i]*x[i]);
-    auto f = solve(b, x2), g = solve(c, x2);
-    std::vector<std::pair<int,int>> res(x.size());
-    for (int i = 0; i < x.size(); ++i)
-        res[i]=f[i]+x[i]*g[i];
-    return res;
-}
-\end{verbatim}
-
-\subsection{分治算法的瓶颈}
-分治过程中横坐标（点值）的数量始终为 $O(n)$，未随多项式拆分而折半，因此时间复杂度仍为 $O(n^2)$。
-
-\subsection{单位根优化与快速傅里叶变换}
-为让点值数量随多项式拆分折半，需**自定义横坐标集合 $X$**，核心是引入**单位根**：
-1. 令多项式长度 $n=2^k$（非 $2^k$ 时补0扩充）；
-2. 取 $X$ 为 $x^n=1$ 的 $n$ 个**n次单位根**（复数域中为 $e^{\frac{2\pi i}{n}k},k=0,1,\dots,n-1$）。
-
-n次单位根满足**平方折半性**：每两个单位根的平方结果相同，使点值数量随分治折半，分治算法的时间复杂度优化为 $O(n\log n)$，即**快速傅里叶变换（FFT）**。
-
-\section{数论变换（NTT）}
-FFT 涉及复数运算，存在精度误差且编程不便，竞赛中常需在**取模意义下**实现多项式乘法，即**数论变换（NTT）**。
-
-\subsection{NTT的核心条件}
-设模数为质数 $p$，多项式扩充后长度为 $n=2^k$，需满足：
-1. $p-1$ 包含足够大的 $2^k$ 因子（保证存在n次单位根）；
-2. 存在 $p$ 的**原根** $g$：$g^0,g^1,\dots,g^{p-2}$ 取遍模 $p$ 的所有非零剩余类。
-
-\subsection{常用模数与原根}
-竞赛中最常用模数：
-\[998244353=7 \times 17 \times 2^{23}+1\]
-其原根为 $3$，满足 $p-1$ 包含大的 $2^k$ 因子（$2^{23}$），可处理长度至 $2^{23}$ 的多项式。
-
-\subsection{模意义下的n次单位根}
-定义模 $p$ 下的n次单位根：
-\[\omega_n = g^{\frac{p-1}{n}} \pmod{p}\]
-满足 $\omega_n^n \equiv 1 \pmod{p}$，且与复数单位根有相同的**对称性**：
-\[\omega_n^{k+\frac{n}{2}} \equiv - \omega_n^k \pmod{p}\]
-
-\subsection{单位根的性质}
-由费马小定理 $g^{p-1} \equiv 1 \pmod{p}$，拆分得：
-\[g^{p-1}-1=\left(g^{\frac{p-1}{2}}+1\right)\left(g^{\frac{p-1}{2}}-1\right) \equiv 0 \pmod{p}\]
-因 $g$ 是原根，$g^{\frac{p-1}{2}}-1 \not\equiv 0 \pmod{p}$，故：
-\[g^{\frac{p-1}{2}} \equiv p-1 \pmod{p}\]
-即模意义下的 $-1$，因此单位根环中对称的两个根互为相反数。
-
-\subsection{快速数论变换（递归版）}
-\begin{verbatim}
-auto ntt(std::vector<modint> &a) -> void
-{
-    static const modint g{3};
-    if (a.size() == 1)
-        return;
-    int n = a.size();
-    std::vector<modint> b(n >> 1), c(n >> 1);
-    for (int i = 0; i < (n >> 1); ++i)
-        b[i] = a[i + i], c[i] = a[i + i + 1];
-    ntt(b);
-    ntt(c);
-
-    // step = g^((P-1)/n)
-    modint x = 1;
-    modint step = g.pow((g.mod() - 1) / n);
-
-    for (int i = 0; i < (n >> 1); ++i)
-    {
-        a[i] = b[i] + x * c[i];
-        a[i + (n >> 1)] = b[i] - x * c[i];
-        x *= step;
-    }
-}
-\end{verbatim}
-
-\subsection{NTT的逆变换（INTT）}
-\subsubsection{正变换公式}
-设 $\omega_n = g^{\frac{p-1}{n}} \pmod{p}$，NTT 正变换（系数→点值）：
-\[A_{k}=\sum_{j=0}^{n-1} a_{j} \cdot \omega_n^{kj} \pmod{p}\]
-
-\subsubsection{逆变换公式}
-将单位根替换为其**模逆元** $\omega_n^{-1}$，做一次NTT后，结果除以 $n$（模 $p$ 下乘以 $n$ 的逆元），即：
-\[a_{k}=\frac{1}{n} \sum_{j=0}^{n-1} A_{j} \cdot \omega_n^{-kj} \pmod{p}\]
-
-\subsubsection{逆变换代码}
-\begin{verbatim}
-auto ntt(std::vector<modint> &a, bool inv = false) -> void
-{
-    static const modint g{3};
-    if (a.size() == 1)
-        return;
-    int n = a.size();
-    std::vector<modint> b(n >> 1), c(n >> 1);
-    for (int i = 0; i < (n >> 1); ++i)
-        b[i] = a[i + i], c[i] = a[i + i + 1];
-    ntt(b, inv);
-    ntt(c, inv);
-
-    // step = g^(P-1)/n
-    modint x = 1;
-    modint step = g.pow((g.mod() - 1) / n);
-    if (inv)
-        step = step.inv();
-
-    for (int i = 0; i < (n >> 1); ++i)
-    {
-        a[i] = b[i] + x * c[i];
-        a[i + (n >> 1)] = b[i] - x * c[i];
-        x *= step;
-    }
-}
-
-auto intt(std::vector<modint> &a) -> void
-{
-    ntt(a, true);
-    modint inv = modint{(int)a.size()}.inv();
-    for (int i = 0; i < a.size(); ++i)
-        a[i] *= inv;
-}
-\end{verbatim}
-
-\subsubsection{逆变换的另一种实现}
-由单位根的周期性 $\omega_n^n \equiv 1 \pmod{p}$，得 $\omega_n^{-kj} = \omega_n^{j(n-k)}$，因此逆变换可表示为：
-\[a_{k}=\frac{1}{n} \sum_{j=0}^{n-1} A_{j} \cdot \omega_n^{j(n-k)} \pmod{p}\]
-即对 $A$ 做一次正NTT后，**翻转除0外的点值**，再乘以 $n$ 的逆元。
-
-\subsection{迭代版NTT（优化递归开销）}
-递归版NTT存在栈开销，实际使用**自底向上的迭代版**，核心分为**位逆序置换**和**蝴蝶变换**两步。
-
-\subsubsection{位逆序置换}
-递归拆分的本质是将数组下标按**二进制位翻转**，例如 $n=8$ 时，原始下标与翻转后下标对应关系：
-\begin{center}
-\begin{tabular}{|c|c|c|c|}
-\hline
-原始下标 & 二进制 & 翻转二进制 & 翻转后的十进制 \\
-\hline
-0 & 000 & 000 & 0 \\
-\hline
-1 & 001 & 100 & 4 \\
-\hline
-2 & 010 & 010 & 2 \\
-\hline
-3 & 011 & 110 & 6 \\
-\hline
-4 & 100 & 001 & 1 \\
-\hline
-5 & 101 & 101 & 5 \\
-\hline
-6 & 110 & 011 & 3 \\
-\hline
-7 & 111 & 111 & 7 \\
-\hline
-\end{tabular}
-\end{center}
-
-$O(n)$ 实现位逆序置换的代码：
-\begin{verbatim}
-// Bit reverse
-int k = __builtin_ctz(n) - 1;
-rev.resize(n);
-for (int i = 0; i < n; i++)
-    rev[i] = rev[i >> 1] >> 1 | (i & 1) << k;
-\end{verbatim}
-
-\subsubsection{蝴蝶变换}
-完成位逆序置换后，由下往上合并子多项式，通过三层循环实现**蝴蝶操作**：
-1. 外层循环：控制合并块的大小 $mid$（步长/半块长度）；
-2. 中层循环：遍历所有待合并块的起点 $i$；
-3. 内层循环：块内偏移 $j$，计算合并结果：
-\[a[i+j] = u + v, \quad a[i+j+mid] = u - v\]
-其中 $u=a[i+j]$，$v=\omega \cdot a[i+j+mid]$（$\omega$ 为旋转因子/单位根）。
-
-\subsubsection{迭代版NTT完整代码}
-\begin{verbatim}
-auto NTT(std::vector<modint> &a) -> void
-{
-    int n = a.size();
-    std::vector<int> rev{};
-    std::vector<modint> roots{};
-
-    // Bit reverse
-    int k = __builtin_ctz(n) - 1;
-    rev.resize(n);
-    for (int i = 0; i < n; i++)
-        rev[i] = rev[i >> 1] >> 1 | (i & 1) << k;
-
-    if (roots.size() == 0)
-        roots = {0, 1};
-    if (int(roots.size()) < n) // 预处理所有单位根
-    {
-        int k = __builtin_ctz(roots.size());
-        roots.resize(n);
-        while ((1 << k) < n)
-        {
-            modint e = modint{3}.pow((modint::mod() - 1) >> (k + 1));
-            for (int i = 1 << (k - 1); i < (1 << k); i++)
-            {
-                roots[2 * i] = roots[i];
-                roots[2 * i + 1] = roots[i] * e;
-            }
-            k++;
-        }
-    }
-    // 排序
-    for (int i = 0; i < n; i++)
-        if(rev[i]<i)
-            std::swap(a[i],a[rev[i]]);
-
-    for (int k = 1; k<n;k*= 2)
-        for (int i=0;i<n;i +=2*k)
-            for (int j=0;j<k;j++)
-            {
-                auto u=a[i+j];
-                auto v = a[i+j+k]* roots[k +j];
-                a[i+j]=u+v;
-                a[i+j+k]=u-v;
-            }
-}
-
-auto INTT(std::vector<modint> &a) ->void
-{
-    NTT(a); std::reverse(a.begin() + 1, a.end());
-    int n = a.size();
-    modint inv = modint(1) /n;
-    for (int i=0;i<n;i++)
-        a[i]*= inv;
-}
-\end{verbatim}
-
-\end{document}
